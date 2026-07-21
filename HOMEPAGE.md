@@ -1,6 +1,6 @@
-# Pergoluxe — Homepage Implementation (Part 1)
+# Pergoluxe — Homepage Implementation
 
-Companion to [`HOMEPAGE_STRATEGY.md`](./HOMEPAGE_STRATEGY.md) (what the homepage must achieve and why) and [`BRAND_IDENTITY.md`](./BRAND_IDENTITY.md) (what it must look like). This documents what was actually built in the first homepage milestone — the Hero, Trust Bar, and Collections sections — and the engineering decisions behind them. Sections 4–13 of the strategy (Configurator Preview onward) are deliberately not built yet, per the milestone boundary.
+Companion to [`HOMEPAGE_STRATEGY.md`](./HOMEPAGE_STRATEGY.md) (what the homepage must achieve and why) and [`BRAND_IDENTITY.md`](./BRAND_IDENTITY.md) (what it must look like). This documents what has actually been built, milestone by milestone: **Part 1** (Hero, Trust Bar, Collections — §1–6) and **Part 2** (Configurator Preview, Signature Benefits, Featured Projects — §7). Strategy sections beyond Featured Projects (Comparison onward) are deliberately not built yet, per the milestone boundaries.
 
 ## Table of Contents
 
@@ -10,6 +10,7 @@ Companion to [`HOMEPAGE_STRATEGY.md`](./HOMEPAGE_STRATEGY.md) (what the homepage
 4. [Accessibility](#4-accessibility)
 5. [Future Extensibility](#5-future-extensibility)
 6. [Verification](#6-verification)
+7. [Part 2 — Configurator Preview, Benefits & Projects](#7-part-2--configurator-preview-benefits--projects)
 
 ---
 
@@ -100,3 +101,64 @@ Beyond `tsc --noEmit`, `eslint`, and a clean static `next build`, the page was e
 - **JavaScript disabled** — hero copy, CTAs, and trust line fully visible (a direct consequence of the CSS-entrance decision).
 - **Card hover** — image zoom stays inside its frame; the card itself doesn't move.
 - **Console/network audit** — the only 404s are nav-link prefetches for routes whose pages don't exist yet (self-resolving as those pages are built) and the single, handled hero-video request.
+
+---
+
+## 7. Part 2 — Configurator Preview, Benefits & Projects
+
+### Component architecture
+
+```
+src/features/configurator/          # the configurator DOMAIN owns the preview
+├── types/index.ts                  # ConfigOption/ConfigStep/Accessory/PreviewSelection
+├── constants.ts                    # steps, options, accessories, base price (flagged placeholder)
+├── utils/pricing.ts                # calculatePreviewPrice + formatPrice (pure, testable)
+├── components/ConfiguratorPreview.tsx   # Client — the working teaser
+└── index.ts
+
+src/features/projects/              # the projects DOMAIN owns the gallery machinery
+├── types.ts                        # Project + PROJECT_CATEGORIES
+├── constants.ts                    # 6 placeholder projects (flagged, Sanity replaces)
+├── components/ProjectCard.tsx      # card (image, meta, hover/focus overlay)
+├── components/ProjectGallery.tsx   # Client — filter chips + grid
+└── index.ts
+
+src/features/home/components/       # home owns only the section CHROME
+├── ConfiguratorPreviewSection.tsx  # Server — heading + <ConfiguratorPreview/>
+├── SignatureBenefits.tsx           # Server — six benefit cards from constants
+└── FeaturedProjectsSection.tsx     # Server — heading + <ProjectGallery/>
+```
+
+The split follows ARCHITECTURE.md's feature-first rule strictly: the homepage doesn't own a configurator or a gallery — it _composes_ them. The full configurator page and the full `/projects` page will grow around the exact components and data models built here, not parallel reimplementations.
+
+### Reusability strategy
+
+- **`ConfiguratorPreview` is a real slice of the configuration model, not a mock.** Selection state drives price, lead time, and the finish preview through one pure function (`calculatePreviewPrice`) — the single seam Shopify variant pricing replaces. Option ids (`attached`, `louvered-motorized`, `graphite`) are the future variant option values; the model/roof taxonomy comes from `config/collections.ts`, not invented SKUs.
+- **`ProjectGallery` takes `projects` as a prop** — the homepage passes the placeholder six; the future `/projects` page passes the full Sanity result set. The filter chips genuinely filter (the brief required UI only, but with local data, dead controls would be worse than working ones — same precedent as the search modal's real local index).
+- **Benefit copy lives in `features/home/constants.ts`** as typed data; the card is a map over it. Copy follows the brand-voice rule: concrete claims (hidden drainage routes water through the posts) with no invented certifications or alloy numbers.
+
+### Performance optimisations
+
+- The route stays **fully static**; Part 2 added ~6KB to the route's JS (the two client components), keeping First Load at 279KB.
+- The **finish crossfade is a CSS opacity transition across three pre-mounted `next/image` layers** (each a sub-25KB generated placeholder) — instant response to selection, zero JS animation, and it collapses natively under reduced motion. No image swap = no network waterfall on interaction.
+- All Part 2 imagery is **below the fold and lazy-loaded** by `next/image` defaults; every image reserves its box via CSS `aspect-[4/3]` (no CLS).
+- Card hover (projects and collections alike) is CSS `transform` inside an `overflow-hidden` frame; benefit-card hover is a border-color transition only — no layout, no paint storms.
+
+### Accessibility considerations
+
+- **Configurator steps are real `<fieldset>`/`<legend>` groups**: Radix `RadioGroup` for choose-one steps (arrow-key navigation with selection-follows-focus, one tab stop per group), `aria-pressed` toggle buttons for independent accessories. Finish swatches carry `aria-label`s and a visible check indicator — never colour alone.
+- **The estimated total sits in an `aria-live="polite"` region**, so screen-reader users hear price updates they can't see; the project gallery announces its filtered result count the same way.
+- **Nothing essential is hover-gated**: project title, location, model, and dimensions render permanently below the image; hover/focus only adds the description overlay, which is also revealed on `focus-visible` for keyboard users.
+- One verification finding worth recording: automated arrow-key testing initially reported selection-follows-focus as broken. Investigation traced it to Radix deferring focus movement in a `setTimeout` while its "arrow key pressed" flag resets on `keyup` — an automation timing artifact (instant synthetic keypresses), confirmed working with human-timed key events. Not an app bug, documented so the next person doesn't re-debug it.
+
+### Future Shopify integration
+
+`features/configurator/constants.ts` is the entire surface to replace: steps/options map to product options on the configurator's Shopify product, `priceDelta` gives way to live variant prices resolved through `lib/shopify` queries, and `calculatePreviewPrice` becomes a lookup of the selected variant's real price. `PreviewSelection` already has the shape of a variant-option selection map. Components don't change.
+
+### Future CMS integration
+
+`features/projects/constants.ts` is explicitly flagged placeholder content — real installations arrive via `features/projects/queries` (GROQ, per ARCHITECTURE.md §7's `project` document schema) and flow through the same `Project` type into the same gallery. Benefit content can move to a Sanity singleton the same way if marketing needs to edit it; the `Benefit` type is already CMS-shaped (flat, serializable, icon referenced by name at the boundary).
+
+### Verification (Part 2)
+
+Playwright/Chromium against the production build: drove the configurator (finish crossfade, accessory toggle, size change — price updated $17,650 → $22,250, matching the pricing function by hand), filtered the gallery (6 → 1 cards on "Poolside", live-region count updates), exercised card hover/focus overlays, keyboard-tested the radio groups (with the timing caveat above), and re-ran desktop/mobile/reduced-motion screenshot passes — zero page errors, zero horizontal overflow at 390/1440px.

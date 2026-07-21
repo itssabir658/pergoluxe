@@ -1,10 +1,17 @@
-import { CollectionShowcase, Hero, TrustBar } from "@/features/home";
+import {
+  CollectionShowcase,
+  ConfiguratorPreviewSection,
+  FeaturedProjectsSection,
+  Hero,
+  SignatureBenefits,
+  TrustBar,
+} from "@/features/home";
 
 /**
- * Homepage — Part 1 of the build (Hero, Trust Bar, Collections), per the
- * section sequence in HOMEPAGE_STRATEGY.md §3. Remaining sections
- * (Configurator Preview onward) land in subsequent milestones and slot in
- * below CollectionShowcase. Metadata is inherited from the root layout's
+ * Homepage — Parts 1 & 2 of the build (Hero through Featured Projects),
+ * in HOMEPAGE_STRATEGY.md §3's exact section order. Remaining sections
+ * (Comparison onward) land in the next milestone and slot in below
+ * FeaturedProjectsSection. Metadata is inherited from the root layout's
  * defaults, which already carry the homepage's title/description/OG set.
  */
 export default function HomePage() {
@@ -13,6 +20,9 @@ export default function HomePage() {
       <Hero />
       <TrustBar />
       <CollectionShowcase />
+      <ConfiguratorPreviewSection />
+      <SignatureBenefits />
+      <FeaturedProjectsSection />
     </>
   );
 }

@@ -12,6 +12,7 @@ export const ROUTES = {
   collections: "/collections",
   collection: (handle: string) => `/collections/${handle}`,
   projects: "/projects",
+  project: (slug: string) => `/projects/${slug}`,
   gallery: "/gallery",
   configurator: "/configurator",
   resources: "/resources",
