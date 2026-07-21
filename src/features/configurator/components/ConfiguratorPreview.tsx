@@ -16,10 +16,8 @@ import {
   leadTimeByRoof,
 } from "@/features/configurator/constants";
 import type { ConfigStep, PreviewSelection } from "@/features/configurator/types";
-import {
-  calculatePreviewPrice,
-  formatPrice,
-} from "@/features/configurator/utils/pricing";
+import { calculatePreviewPrice } from "@/features/configurator/utils/pricing";
+import { formatPrice } from "@/utils/formatPrice";
 
 const finishStep = configSteps.find((step) => step.id === "finish");
 const finishOptions = finishStep?.options ?? [];

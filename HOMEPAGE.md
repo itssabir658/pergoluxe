@@ -1,6 +1,6 @@
 # Pergoluxe — Homepage Implementation
 
-Companion to [`HOMEPAGE_STRATEGY.md`](./HOMEPAGE_STRATEGY.md) (what the homepage must achieve and why) and [`BRAND_IDENTITY.md`](./BRAND_IDENTITY.md) (what it must look like). This documents what has actually been built, milestone by milestone: **Part 1** (Hero, Trust Bar, Collections — §1–6) and **Part 2** (Configurator Preview, Signature Benefits, Featured Projects — §7). Strategy sections beyond Featured Projects (Comparison onward) are deliberately not built yet, per the milestone boundaries.
+Companion to [`HOMEPAGE_STRATEGY.md`](./HOMEPAGE_STRATEGY.md) (what the homepage must achieve and why) and [`BRAND_IDENTITY.md`](./BRAND_IDENTITY.md) (what it must look like). This documents what has actually been built, milestone by milestone: **Part 1** (Hero, Trust Bar, Collections — §1–6), **Part 2** (Configurator Preview, Signature Benefits, Featured Projects — §7), and **Part 3** (Comparison, Testimonials & Installation Journey — §8). Strategy sections beyond Installation Journey (Guarantees & Financing onward) are deliberately not built yet, per the milestone boundaries.
 
 ## Table of Contents
 
@@ -11,6 +11,7 @@ Companion to [`HOMEPAGE_STRATEGY.md`](./HOMEPAGE_STRATEGY.md) (what the homepage
 5. [Future Extensibility](#5-future-extensibility)
 6. [Verification](#6-verification)
 7. [Part 2 — Configurator Preview, Benefits & Projects](#7-part-2--configurator-preview-benefits--projects)
+8. [Part 3 — Comparison, Testimonials & Installation Journey](#8-part-3--comparison-testimonials--installation-journey)
 
 ---
 
@@ -162,3 +163,82 @@ The split follows ARCHITECTURE.md's feature-first rule strictly: the homepage do
 ### Verification (Part 2)
 
 Playwright/Chromium against the production build: drove the configurator (finish crossfade, accessory toggle, size change — price updated $17,650 → $22,250, matching the pricing function by hand), filtered the gallery (6 → 1 cards on "Poolside", live-region count updates), exercised card hover/focus overlays, keyboard-tested the radio groups (with the timing caveat above), and re-ran desktop/mobile/reduced-motion screenshot passes — zero page errors, zero horizontal overflow at 390/1440px.
+
+## 8. Part 3 — Comparison, Testimonials & Installation Journey
+
+### Component architecture
+
+```
+src/features/product/                 # the product DOMAIN owns model comparison data
+├── types/index.ts                    # SpecRow/SpecRowId/PergolaModel/SpecValue
+├── constants.ts                      # 3 models × 11 spec rows (flagged placeholder pricing)
+├── components/ComparisonTable.tsx    # Server — the real <table>, sticky header, mobile scroll
+└── index.ts
+
+src/features/testimonials/            # the testimonials DOMAIN owns review data + display
+├── types.ts                          # Testimonial + AggregateRating
+├── constants.ts                      # featuredTestimonial, testimonials[], aggregateRating
+├── components/StarRating.tsx         # Server — accessible star glyphs (no icon-only meaning)
+├── components/TestimonialCard.tsx    # Server — grid card (photo placeholder, quote, model)
+├── components/FeaturedTestimonial.tsx    # Server — editorial lead quote, larger treatment
+├── components/AggregateRatingSummary.tsx # Server — "4.9 · 1,200+ installations" strip
+├── components/VideoTestimonialTeaser.tsx # Server — honest "coming soon" tile, not a fake player
+└── index.ts
+
+src/features/installation-journey/    # the process DOMAIN owns the 6-step timeline
+├── types.ts                          # ProcessStep (icon/title/description/timeframe)
+├── constants.ts                      # the 6 named steps, in order
+├── components/ProcessTimeline.tsx    # Client — scroll-linked rail fill (Framer Motion)
+└── index.ts
+
+src/features/home/components/         # home owns only the section CHROME, as in Parts 1–2
+├── ComparisonSection.tsx             # Server — heading + <ComparisonTable/>
+├── TestimonialsSection.tsx           # Server — heading + rating + featured + grid + teaser
+└── InstallationJourneySection.tsx    # Server — heading + <ProcessTimeline/> + consultation CTA
+```
+
+Same feature-first split as Parts 1–2: home never owns comparison, review, or process logic — it composes three independent, individually reusable features. `ComparisonTable` is exactly the table a future "Full Specifications" page reuses verbatim; `ProcessTimeline` is exactly what a future dedicated "How It Works" page reuses; the testimonials components are exactly what a future full reviews page/index would page through.
+
+### Reusability strategy
+
+- **`ComparisonTable` takes no props** — it reads `pergolaModels`/`specRows` from `features/product/constants.ts` directly, matching the established pattern (`ProjectGallery` takes data as a prop because the homepage passes a subset; `ComparisonTable` doesn't because the homepage and any future comparison page show the _same_ full model set — a prop would just echo the import).
+- **`SpecRowId` is a closed union, not a string** — every row the table can render is enumerated once in `types/index.ts`, so `PergolaModel.specs` is statically checked to have a value for every row for every model. Adding an eventual 4th model or a 12th spec row is a data change; the union and the render loop don't need to change together.
+- **`TestimonialCard` and `FeaturedTestimonial` both take a `Testimonial` prop** rather than reaching into constants themselves, so a future paginated/filterable reviews page can render the identical card against a different (larger, server-fetched) data set.
+- **`StarRating` is its own component** (not inlined into the two testimonial components) because it's the third place a numeric rating needs the same accessible rendering (card, featured quote, aggregate summary) — the "rule of three" promotion this codebase already applied once to `formatPrice` (see §7), applied again here from the start since all three call sites existed in the same PR.
+
+### Performance optimisations
+
+- **Every new component in this milestone is a Server Component** except `ProcessTimeline`, whose only reason to be a Client Component is the scroll-linked rail fill (`useScroll`/`useSpring` from Framer Motion need the browser). The comparison table, every testimonial component, and all three section wrappers ship zero client JS of their own.
+- **The route stays fully static** — Part 3 added ~2.5KB to the page's own JS (`ProcessTimeline`'s scroll-linked motion is the only new client code; everything else is server-rendered HTML), First Load JS moving from 279KB → 282KB.
+- **Model images use `next/image` with explicit `sizes`** (`(min-width: 1024px) 25vw, 240px`) matching the comparison table's actual rendered column width at each breakpoint, and reserve their box via `aspect-[4/3]` — no CLS from the three model photos loading in.
+- **The timeline rail's scroll-linked transform is `scaleY` only** (a GPU compositor property), driven through a `useSpring` for smoothing rather than re-rendering React on every scroll tick — the only work per frame is a compositor-thread transform update.
+- **The comparison table's horizontal scroll on mobile is native `overflow-x: auto`**, not a JS-driven carousel — no scroll-tracking JS, no bundle cost, and it inherits the platform's own momentum scrolling and scrollbar affordances for free.
+
+### Accessibility considerations
+
+- **The comparison table is a real `<table>`** with a `<caption className="sr-only">` naming it, `scope="col"` on every header cell and `scope="row"` on every spec label — screen readers get row/column context for free, which a `<div>` grid pretending to be a table never fully replicates. The rich model-card row is deliberately `<td>` (visual content, not column headers); the compact name+price+CTA row beneath it is the real `scope="col"` header, so "reading down a column" always lands on meaningful header text, not a product photo's alt text.
+- **Every boolean spec cell pairs an icon with `sr-only` text** ("Included" / "Not available") — Check and Minus are different _shapes_, not just different colours, so the states survive both colour-blindness and a grayscale/high-contrast rendering. Colour is never the only signal, per `BRAND_IDENTITY.md`'s accessibility rules.
+- **Sticky header is desktop-only by construction, not by media-query patch-up**: `position: sticky` cannot operate inside an `overflow-x: auto` ancestor, so the compact header row is `lg:sticky` and the wrapper is `lg:overflow-visible` — on mobile the wrapper is the scroll container instead, which is the explicitly required split (sticky desktop / horizontal-scroll mobile), not an accidental side effect.
+- **No testimonial carousel** — the brief allowed one only if it met a strict bar (keyboard accessible, swipe, never autoplay, respects reduced motion); a static featured-quote-plus-grid layout meets the actual goal (surface many reviews at once) without needing to clear that bar at all, and can't regress into an inaccessible slider later.
+- **The video testimonial teaser is an honest placeholder**: a static "coming soon" tile with no play button, no fake progress bar, and no `<video>` element pointing nowhere — it never promises functionality that isn't there yet, consistent with this project's placeholder-honesty convention for prices and ratings.
+- **The timeline rail is `aria-hidden`**; the journey's order and content are carried entirely by the numbered, static step text beside it, so removing the decorative rail (e.g. under `prefers-reduced-motion`, where it renders fully drawn and static instead of scroll-tracking) loses zero information.
+
+### Performance/layout bug found and fixed during verification
+
+Playwright's mobile (390px) pass caught a real horizontal-overflow bug the static tools (`tsc`, `eslint`, `next build`) couldn't: `document.documentElement.scrollWidth` exceeded `clientWidth` by up to 264px whenever the Comparison section was scrolled into view or reached via a `#compare` anchor link — even though the comparison table's own `overflow-x-auto` wrapper was itself correctly clipping and scrolling the table.
+
+Root cause: `<main>` (`src/app/layout.tsx`) is a flex item (`flex-1`) inside `<body>`'s column flex layout. Flex items default to `min-width: auto`, and a flex container's scrollable-overflow calculation can still be driven by an item's wide descendant content (the 760px-wide table) even when that content is visually clipped several levels down — a distinct mechanism from ordinary block-level overflow, which explains why it resisted `overflow` fixes applied to `<main>`, `<body>`, and `<html>` in isolation and only appeared once the section actually rendered into view. Two fixes were needed together, at two different points in the chain:
+
+1. **`min-w-0` on `<main>`** (`layout.tsx`) — restores normal shrink-to-fit sizing for the flex item itself, so its own rendered box no longer grows to fit a wide descendant.
+2. **`contain-paint` on the comparison table's scroll wrapper** (`ComparisonTable.tsx`) — CSS containment guarantees nothing inside that div is ever painted, laid out, or measured outside its own box, closing the specific flex/overflow interaction at its actual source rather than trying to contain it from an ancestor several levels away.
+
+Both were necessary: `min-w-0` alone fixed the box's rendered width but not the ancestor's overflow bookkeeping; `contain-paint` alone (without `min-w-0`) left the flex item free to mis-size itself even though nothing painted outside it. Verified fixed across every reproduction found during debugging: page load at rest, `scrollIntoViewIfNeeded`, real anchor navigation to `#compare`, and an actual `window.scrollBy` horizontal-scroll attempt — all report zero overflow post-fix.
+
+### Future integration
+
+- **Shopify**: `PergolaModel.id` becomes the product handle; `specs` values move to product metafields (boolean/optional/string all map cleanly to metafield types); `startingPrice` becomes the resolved minimum variant price. `ComparisonTable` doesn't change — only `features/product/constants.ts` is replaced by a `lib/shopify` query, exactly the seam Part 2 already established for the configurator.
+- **Sanity CMS**: `testimonials`, `featuredTestimonial`, and `aggregateRating` are explicitly flagged placeholder content, following the same convention as `features/projects/constants.ts` — real reviews arrive via a `testimonial` document schema and a `features/testimonials/queries` GROQ layer, flowing through the same `Testimonial` type into the same card/featured/grid components. `processSteps` could similarly move to a CMS singleton if marketing ever needs to edit timeframes without a deploy, though the six steps and their order are structural, not marketing copy, so there's no pressure to do so yet.
+
+### Verification (Part 3)
+
+Playwright/Chromium against the production build, across desktop (1440px), mobile (390px), `reducedMotion: 'reduce'`, and keyboard-only interaction: comparison table sticky header confirmed on desktop scroll, row hover states, and horizontal scroll on mobile with zero page-level overflow (see bug/fix above); testimonials section (featured quote, grid, aggregate rating, video teaser) rendered correctly at both breakpoints; installation journey timeline rendered fully drawn and static under reduced motion (no scroll-linked jank); comparison CTAs reached and activated via keyboard focus. Final pass: zero page errors, zero horizontal overflow at 390px or 1440px, `tsc --noEmit` clean, `eslint` clean, `next build` clean (First Load JS 282KB, route fully static).

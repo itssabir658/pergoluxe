@@ -45,7 +45,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             Skip to content
           </a>
           <Header announcementBar={<AnnouncementBar announcements={announcements} />} />
-          <main id="main-content" className="flex-1">
+          {/* `min-w-0`: `main` is a flex item in `body`'s column flex context,
+           * where flex items default to `min-width: auto` — letting a wide
+           * descendant (e.g. a horizontally-scrollable comparison table) grow
+           * `main`'s own box past the viewport instead of shrinking to fit
+           * it. `min-w-0` restores normal shrink-to-fit sizing. */}
+          <main id="main-content" className="min-w-0 flex-1">
             {children}
           </main>
           <Footer />

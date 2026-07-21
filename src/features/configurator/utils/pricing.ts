@@ -21,11 +21,3 @@ export function calculatePreviewPrice(selection: PreviewSelection): number {
 
   return BASE_PRICE + stepTotal + accessoryTotal;
 }
-
-export function formatPrice(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(value);
-}

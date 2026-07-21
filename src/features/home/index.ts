@@ -4,3 +4,6 @@ export { CollectionShowcase } from "./components/CollectionShowcase";
 export { ConfiguratorPreviewSection } from "./components/ConfiguratorPreviewSection";
 export { SignatureBenefits } from "./components/SignatureBenefits";
 export { FeaturedProjectsSection } from "./components/FeaturedProjectsSection";
+export { ComparisonSection } from "./components/ComparisonSection";
+export { TestimonialsSection } from "./components/TestimonialsSection";
+export { InstallationJourneySection } from "./components/InstallationJourneySection";
