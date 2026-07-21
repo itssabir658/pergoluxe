@@ -10,6 +10,7 @@ This repository currently contains the **project architecture, design system, gl
 - [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) — every token, primitive, component, and animation utility built in the design-system pass, and why.
 - [`NAVIGATION.md`](./NAVIGATION.md) — the root layout, header, mega menu, search, mobile navigation, footer, and floating utilities (scroll progress, back-to-top, cookie consent) — architecture, performance, and accessibility decisions behind each.
 - [`HOMEPAGE_STRATEGY.md`](./HOMEPAGE_STRATEGY.md) — personas, buying journey, full section-by-section information hierarchy, hero strategy, trust-building, interaction/motion, mobile, SEO, performance, and accessibility strategy for the homepage — written before any homepage code exists.
+- [`BRAND_IDENTITY.md`](./BRAND_IDENTITY.md) — brand personality, competitive positioning, the three design directions and the chosen one (Architectural Modern), the production colour system with computed contrast ratios, typography, spacing, component and motion language, photography direction, and the final Design Bible.
 
 ## Stack
 
