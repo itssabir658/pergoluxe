@@ -30,7 +30,7 @@
     "react-dom": "19.1.0",
     "typescript": "5.6.3",
     "@shopify/storefront-api-client": "^1.0.5",
-    "@sanity/client": "^6.24.1",
+    "@sanity/client": "^7.24.0",
     "@sanity/image-url": "^1.1.0",
     "next-sanity": "^9.8.0",
     "cloudinary": "^2.5.1",
