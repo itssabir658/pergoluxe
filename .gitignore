@@ -1,0 +1,36 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# production
+build/
+dist/
+
+# testing
+coverage/
+playwright-report/
+test-results/
+
+# env
+.env
+.env*.local
+
+# sanity
+.sanity/
+
+# misc
+.DS_Store
+*.pem
+*.log
+.turbo
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
