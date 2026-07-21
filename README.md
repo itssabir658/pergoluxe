@@ -2,7 +2,7 @@
 
 A premium, enterprise-grade pergola ecommerce platform. Headless Shopify + Sanity CMS on Next.js 15.
 
-This repository currently contains the **project architecture, design system, global application shell, and homepage UX strategy** — folder structure, tooling, design tokens, UI components, the header/footer/navigation every page will inherit, and the full conversion blueprint for the homepage itself. No homepage sections or product pages have been built yet.
+This repository contains the **project architecture, design system, global application shell, homepage strategy/brand identity, and the first homepage sections** (Hero, Trust Bar, Collections). Remaining homepage sections and product pages are not built yet.
 
 **Start here →**
 
@@ -11,6 +11,7 @@ This repository currently contains the **project architecture, design system, gl
 - [`NAVIGATION.md`](./NAVIGATION.md) — the root layout, header, mega menu, search, mobile navigation, footer, and floating utilities (scroll progress, back-to-top, cookie consent) — architecture, performance, and accessibility decisions behind each.
 - [`HOMEPAGE_STRATEGY.md`](./HOMEPAGE_STRATEGY.md) — personas, buying journey, full section-by-section information hierarchy, hero strategy, trust-building, interaction/motion, mobile, SEO, performance, and accessibility strategy for the homepage — written before any homepage code exists.
 - [`BRAND_IDENTITY.md`](./BRAND_IDENTITY.md) — brand personality, competitive positioning, the three design directions and the chosen one (Architectural Modern), the production colour system with computed contrast ratios, typography, spacing, component and motion language, photography direction, and the final Design Bible.
+- [`HOMEPAGE.md`](./HOMEPAGE.md) — the implemented homepage sections (Part 1: Hero, Trust Bar, Collections): component structure, the CSS-vs-JS entrance decision and the reduced-motion bug that forced it, performance and accessibility verification.
 
 ## Stack
 

@@ -1,4 +1,5 @@
 import { ROUTES } from "@/constants/routes";
+import { collections } from "@/config/collections";
 
 export type NavLink = {
   label: string;
@@ -31,41 +32,19 @@ export type PrimaryNavItem = {
 };
 
 /**
- * Product taxonomy below is real site IA (the categories this business
- * actually sells), not sample/lorem content — it's what the mega menu
- * needs to demonstrate its layout. Imagery is intentionally a styled
- * placeholder (see MegaMenu.tsx) until real product photography is wired
- * through Cloudinary/Shopify; nothing here fabricates a product, price,
- * or spec.
+ * The mega menu's product categories derive from `config/collections.ts`
+ * (the single source of truth for the collection taxonomy, shared with the
+ * homepage Collections section) so nav and homepage can never drift apart.
+ * Imagery is intentionally a styled placeholder (see MegaMenu.tsx) until
+ * real product photography is wired through Cloudinary/Shopify.
  */
 const productsMegaMenu: MegaMenuContent = {
-  categories: [
-    {
-      title: "Attached Pergolas",
-      href: ROUTES.collection("attached-pergolas"),
-      description: "Mounts directly to your home for a seamless architectural extension.",
-      keyFeature: "Engineered wind + snow load ratings",
-    },
-    {
-      title: "Freestanding Pergolas",
-      href: ROUTES.collection("freestanding-pergolas"),
-      description:
-        "Stands independently — ideal for poolside, patio, or open-yard installs.",
-      keyFeature: "No structural attachment required",
-    },
-    {
-      title: "Louvered Roof Systems",
-      href: ROUTES.collection("louvered-roofs"),
-      description: "Motorized aluminum louvers that rotate from open to fully closed.",
-      keyFeature: "App + remote controlled operation",
-    },
-    {
-      title: "Glass & Screen Enclosures",
-      href: ROUTES.collection("enclosures"),
-      description: "Retractable glass and screen walls that extend the season.",
-      keyFeature: "Retracts fully in under 30 seconds",
-    },
-  ],
+  categories: collections.map(({ title, href, description, keyFeature }) => ({
+    title,
+    href,
+    description,
+    keyFeature,
+  })),
   featured: {
     title: "The Meridian Collection",
     description:
