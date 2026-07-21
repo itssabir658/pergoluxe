@@ -6,7 +6,7 @@ import { cn } from "@/utils/cn";
 import { formatPrice } from "@/utils/formatPrice";
 import { buttonVariants } from "@/components/ui/button";
 import { pergolaModels, specRows } from "@/features/product/constants";
-import type { SpecValue } from "@/features/product/types";
+import type { PergolaModel, SpecValue } from "@/features/product/types";
 
 /** The compact model strip that stays pinned while spec rows scroll —
  * solid background + z-index so rows pass beneath it. Desktop only: on
@@ -58,8 +58,15 @@ function SpecCell({ value }: { value: SpecValue }) {
  * Shopify-ready: `pergolaModels` maps 1:1 to future products by handle,
  * with specs moving to metafields — the table renders whatever the array
  * contains.
+ *
+ * `models` defaults to the full `pergolaModels` list (the homepage's only
+ * call site, unchanged); the Product Listing Experience's "Quick Compare"
+ * is this component's second consumer, passing just the 2–3 models a
+ * visitor selected — the rule-of-three promotion this codebase already
+ * applied to `formatPrice` (see HOMEPAGE.md §7), applied the same way here
+ * instead of a second comparison-table implementation.
  */
-export function ComparisonTable() {
+export function ComparisonTable({ models = pergolaModels }: { models?: PergolaModel[] }) {
   return (
     // `contain-paint`: without it, this div's clipped-and-scrollable content
     // still contributes its full unclipped width to the page's scrollable
@@ -79,7 +86,7 @@ export function ComparisonTable() {
         <thead>
           <tr>
             <td className="align-bottom" />
-            {pergolaModels.map((model) => (
+            {models.map((model) => (
               <td key={model.id} className="w-[28%] px-3 pb-5 align-top">
                 <div className="group">
                   <div className="border-border relative aspect-[4/3] overflow-hidden rounded-xl border">
@@ -103,7 +110,7 @@ export function ComparisonTable() {
             <th scope="col" className={stickyHeaderCell}>
               <span className="sr-only">Specification</span>
             </th>
-            {pergolaModels.map((model) => (
+            {models.map((model) => (
               <th key={model.id} scope="col" className={cn(stickyHeaderCell, "px-3")}>
                 <div className="flex flex-wrap items-center justify-between gap-2 py-3">
                   <div>
@@ -136,7 +143,7 @@ export function ComparisonTable() {
               >
                 {row.label}
               </th>
-              {pergolaModels.map((model) => (
+              {models.map((model) => (
                 <td
                   key={model.id}
                   className="text-caption border-border text-foreground border-b px-3 py-3.5"

@@ -224,6 +224,71 @@ async function projectImage({ slug, from, to, line, angle, opacity }) {
     .toFile(path.join(imagesDir, `project-${slug}.jpg`));
 }
 
+/**
+ * Accessory product-card imagery for the Product Listing Experience — a
+ * distinct tone family per accessory (warm for lighting, cool graphite for
+ * screens, ember for heating, neutral for control/sensor hardware) so five
+ * cards in the same collection read as five different things at a glance,
+ * not one gradient repeated. Same abstract-placeholder honesty rule as
+ * every other generated image here.
+ */
+const accessoryTones = {
+  "led-lighting-kit": {
+    from: "#3a2c12",
+    to: "#7a5a22",
+    line: "#f2c879",
+    angle: -12,
+    opacity: 0.16,
+  },
+  "retractable-screens": {
+    from: "#26282a",
+    to: "#464a4d",
+    line: "#aeb4b8",
+    angle: 18,
+    opacity: 0.12,
+  },
+  "infrared-heater": {
+    from: "#3a1c12",
+    to: "#7a3820",
+    line: "#e8875a",
+    angle: 6,
+    opacity: 0.14,
+  },
+  "smart-remote-control": {
+    from: "#26262a",
+    to: "#48484f",
+    line: "#c7c7d1",
+    angle: -20,
+    opacity: 0.1,
+  },
+  "wind-rain-sensor": {
+    from: "#1c262e",
+    to: "#3c5468",
+    line: "#9cc2d6",
+    angle: 30,
+    opacity: 0.14,
+  },
+};
+
+async function accessoryImage(handle, { from, to, line, angle, opacity }) {
+  const w = 1200;
+  const h = 900;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="${from}"/>
+        <stop offset="1" stop-color="${to}"/>
+      </linearGradient>
+    </defs>
+    <rect width="${w}" height="${h}" fill="url(#bg)"/>
+    ${louvers({ width: w, height: h, angle, color: line, opacity, beam: 20, gap: 96 })}
+    ${vignette(w, h, 0.3)}
+  </svg>`;
+  await sharp(Buffer.from(svg))
+    .jpeg({ quality: 74, mozjpeg: true })
+    .toFile(path.join(imagesDir, `accessory-${handle}.jpg`));
+}
+
 await mkdir(imagesDir, { recursive: true });
 await heroPoster();
 await finalCta();
@@ -235,5 +300,8 @@ for (const [finish, tone] of Object.entries(configuratorFinishes)) {
 }
 for (const tone of projectTones) {
   await projectImage(tone);
+}
+for (const [handle, tone] of Object.entries(accessoryTones)) {
+  await accessoryImage(handle, tone);
 }
 console.log("Placeholder images written to public/images/");
