@@ -5,4 +5,9 @@ export {
   useHeaderMode,
   useSetHeaderMode,
 } from "./header-mode-provider";
+export {
+  FooterNewsletterProvider,
+  useFooterNewsletterHidden,
+  useHideFooterNewsletter,
+} from "./footer-newsletter-provider";
 export { AppProviders } from "./app-providers";

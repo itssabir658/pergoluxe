@@ -15,7 +15,7 @@ export function TrustBar() {
     <Section
       id="trust"
       spacing="sm"
-      className="border-border bg-surface scroll-mt-24 border-y"
+      className="border-border bg-surface scroll-mt-header border-y"
     >
       <Container>
         <h2 className="sr-only">Why homeowners trust Pergoluxe</h2>

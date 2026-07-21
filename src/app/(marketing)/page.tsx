@@ -2,21 +2,25 @@ import {
   CollectionShowcase,
   ComparisonSection,
   ConfiguratorPreviewSection,
+  FAQSection,
   FeaturedProjectsSection,
+  FinalCTASection,
   Hero,
   InstallationJourneySection,
+  NewsletterSection,
   SignatureBenefits,
+  SuppressFooterNewsletter,
   TestimonialsSection,
   TrustBar,
 } from "@/features/home";
 
 /**
- * Homepage — Parts 1–3 of the build (Hero through Installation Journey),
- * in HOMEPAGE_STRATEGY.md §3's exact section order. Remaining sections
- * (Guarantees & Financing, FAQ, Final CTA) land in the next milestone and
- * slot in below InstallationJourneySection. Metadata is inherited from
- * the root layout's defaults, which already carry the homepage's
- * title/description/OG set.
+ * Homepage — complete through Part 4. Section order follows
+ * HOMEPAGE_STRATEGY.md §3, with "Guarantees & Financing" intentionally
+ * folded into the FAQ's Warranty/Financing questions rather than shipped
+ * as its own section, per Part 4's brief. Metadata is inherited from the
+ * root layout's defaults, which already carry the homepage's
+ * title/description/OG set; FAQ schema is emitted by `FAQSection` itself.
  */
 export default function HomePage() {
   return (
@@ -30,6 +34,10 @@ export default function HomePage() {
       <ComparisonSection />
       <TestimonialsSection />
       <InstallationJourneySection />
+      <FAQSection />
+      <FinalCTASection />
+      <NewsletterSection />
+      <SuppressFooterNewsletter />
     </>
   );
 }

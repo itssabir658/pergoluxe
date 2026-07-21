@@ -11,7 +11,11 @@ import { ConfiguratorPreview } from "@/features/configurator";
  */
 export function ConfiguratorPreviewSection() {
   return (
-    <Section id="configurator-preview" spacing="lg" className="bg-surface scroll-mt-24">
+    <Section
+      id="configurator-preview"
+      spacing="lg"
+      className="bg-surface scroll-mt-header"
+    >
       <Container>
         <ScrollReveal className="max-w-2xl">
           <p className="text-label text-primary">Configurator</p>

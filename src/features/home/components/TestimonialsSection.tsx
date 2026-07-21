@@ -25,7 +25,7 @@ import {
  */
 export function TestimonialsSection() {
   return (
-    <Section id="testimonials" spacing="lg" className="scroll-mt-24">
+    <Section id="testimonials" spacing="lg" className="scroll-mt-header">
       <Container>
         <ScrollReveal className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>

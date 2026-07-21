@@ -1,6 +1,6 @@
 # Pergoluxe — Homepage Implementation
 
-Companion to [`HOMEPAGE_STRATEGY.md`](./HOMEPAGE_STRATEGY.md) (what the homepage must achieve and why) and [`BRAND_IDENTITY.md`](./BRAND_IDENTITY.md) (what it must look like). This documents what has actually been built, milestone by milestone: **Part 1** (Hero, Trust Bar, Collections — §1–6), **Part 2** (Configurator Preview, Signature Benefits, Featured Projects — §7), and **Part 3** (Comparison, Testimonials & Installation Journey — §8). Strategy sections beyond Installation Journey (Guarantees & Financing onward) are deliberately not built yet, per the milestone boundaries.
+Companion to [`HOMEPAGE_STRATEGY.md`](./HOMEPAGE_STRATEGY.md) (what the homepage must achieve and why) and [`BRAND_IDENTITY.md`](./BRAND_IDENTITY.md) (what it must look like). This documents what has actually been built, milestone by milestone: **Part 1** (Hero, Trust Bar, Collections — §1–6), **Part 2** (Configurator Preview, Signature Benefits, Featured Projects — §7), **Part 3** (Comparison, Testimonials & Installation Journey — §8), and **Part 4** (FAQ, Final CTA, Newsletter & homepage-wide polish — §9). The homepage is now **complete and production-ready** — no further homepage sections are planned; the next milestone is Product Listing Pages.
 
 ## Table of Contents
 
@@ -12,6 +12,7 @@ Companion to [`HOMEPAGE_STRATEGY.md`](./HOMEPAGE_STRATEGY.md) (what the homepage
 6. [Verification](#6-verification)
 7. [Part 2 — Configurator Preview, Benefits & Projects](#7-part-2--configurator-preview-benefits--projects)
 8. [Part 3 — Comparison, Testimonials & Installation Journey](#8-part-3--comparison-testimonials--installation-journey)
+9. [Part 4 — FAQ, Final CTA, Newsletter & Homepage Polish](#9-part-4--faq-final-cta-newsletter--homepage-polish)
 
 ---
 
@@ -242,3 +243,91 @@ Both were necessary: `min-w-0` alone fixed the box's rendered width but not the 
 ### Verification (Part 3)
 
 Playwright/Chromium against the production build, across desktop (1440px), mobile (390px), `reducedMotion: 'reduce'`, and keyboard-only interaction: comparison table sticky header confirmed on desktop scroll, row hover states, and horizontal scroll on mobile with zero page-level overflow (see bug/fix above); testimonials section (featured quote, grid, aggregate rating, video teaser) rendered correctly at both breakpoints; installation journey timeline rendered fully drawn and static under reduced motion (no scroll-linked jank); comparison CTAs reached and activated via keyboard focus. Final pass: zero page errors, zero horizontal overflow at 390px or 1440px, `tsc --noEmit` clean, `eslint` clean, `next build` clean (First Load JS 282KB, route fully static).
+
+## 9. Part 4 — FAQ, Final CTA, Newsletter & Homepage Polish
+
+This is the final homepage milestone. The three remaining sections from `HOMEPAGE_STRATEGY.md`'s flow are built, and the whole page — all twelve sections, Parts 1 through 4 — was reviewed and verified as one continuous experience rather than as isolated pieces. "Guarantees & Financing" (`HOMEPAGE_STRATEGY.md` §3.10) is intentionally **not** a separate section: its content (warranty terms, financing) is folded into the FAQ's Warranty and Financing questions instead, per this milestone's brief.
+
+### Component tree
+
+```
+src/features/faq/                     # the FAQ DOMAIN owns questions + schema
+├── types.ts                          # FAQItem
+├── constants.ts                      # 10 Q&A items (Delivery → Returns)
+├── schema.ts                         # faqJsonLd(items) — FAQPage structured data
+├── components/FAQAccordion.tsx       # Client — Radix accordion, single-open-only
+└── index.ts
+
+src/features/newsletter/               # the newsletter DOMAIN owns copy + form
+├── types.ts                          # NewsletterCopy
+├── constants.ts                      # CMS-editable copy placeholder
+├── components/NewsletterForm.tsx     # Client — useActionState + subscribeNewsletter
+└── index.ts
+
+src/features/home/components/          # home owns only the section CHROME
+├── FAQSection.tsx                    # Server — heading + FAQPage schema + <FAQAccordion/>
+├── FinalCTASection.tsx               # Server — full-bleed image, headline, dual CTA, trust row
+├── NewsletterSection.tsx             # Server — heading + <NewsletterForm/>
+└── SuppressFooterNewsletter.tsx      # Client, renders nothing — see "Weak areas" below
+
+src/actions/subscribeNewsletter.ts     # pre-existing server action — now has two real
+                                        # callers (this section + the footer utility bar)
+src/providers/footer-newsletter-provider.tsx  # new — lets a route hide the footer's
+                                                # newsletter block when it has its own
+scripts/generate-placeholders.mjs      # +finalCta() — one new generated image
+```
+
+`page.tsx` composition, in full, end to end:
+
+```
+Hero → TrustBar → CollectionShowcase → ConfiguratorPreviewSection → SignatureBenefits
+  → FeaturedProjectsSection → ComparisonSection → TestimonialsSection
+  → InstallationJourneySection → FAQSection → FinalCTASection → NewsletterSection
+  → SuppressFooterNewsletter → Footer
+```
+
+### Architecture overview
+
+Same feature-first split as every prior part: `features/faq` and `features/newsletter` own data, validation, and schema; `features/home` owns only section-level chrome (heading, spacing, composition). Two decisions worth calling out specifically:
+
+- **`FAQAccordion` takes `items` as a prop**, not an import — the same reusability seam as `TestimonialCard`/`ComparisonTable` (Parts 2–3), so a future dedicated FAQ page can render the identical component against a larger question set.
+- **The homepage's `NewsletterForm` and the footer's `FooterNewsletter` both call the same `subscribeNewsletter` server action** (pre-existing since the architecture milestone, previously only wired to the footer). Validation, and the future ESP integration, exist in exactly one place regardless of which form a visitor uses.
+
+### Weak areas found and resolved
+
+The brief asked for a senior-review pass, not just new sections — reviewing the whole page surfaced two real, cross-cutting issues neither `tsc`, `eslint`, nor a per-section Playwright check would catch:
+
+1. **Every section's anchor-scroll offset was wrong on mobile.** All sections used a static `scroll-mt-24` (96px) to clear the fixed header when scrolled/linked to directly, but the actual mobile header stack (announcement bar + nav) measures 161–170px depending on wrap state — so the top ~65–74px of whatever section you jumped to rendered _underneath_ the fixed header, cutting off headlines. This was pre-existing (present on every Part 1–3 section, not just the new ones) and only became visible once Playwright verification scrolled directly to `#cta` for the first time. **Fixed globally**: `HeaderShell` (which already measures its own real height via `ResizeObserver` for its layout spacer) now also publishes that height to a `--header-stack-height` CSS variable; a new `scroll-mt-header` utility (`tokens.css`) reads it, and every section across the whole homepage — old and new — was switched from `scroll-mt-24` to `scroll-mt-header`. The offset is now always correct, including through an announcement-bar wrap or dismiss, with no per-breakpoint tuning.
+2. **The homepage showed two newsletter signup forms back to back** — the new `NewsletterSection` directly above the footer's existing compact `FooterNewsletter` utility bar, both with near-identical copy. Invisible when reviewing either section in isolation; unmistakable in the full-page screenshot. Removing the footer's version site-wide would regress every _other_ page (which have no dedicated newsletter section of their own), so the fix is homepage-specific: a new `FooterNewsletterProvider` (mirroring the existing `HeaderModeProvider` pattern exactly, for the same structural reason — the footer is rendered once, above `{children}`, and can't take a prop from a route nested inside it) lets the homepage call `useHideFooterNewsletter()` and suppress just that one block, only on that one route.
+
+### Performance summary
+
+- **Route stays fully static**; Part 4 added ~0.6KB to the page's own JS (the FAQ accordion and newsletter form are the only new client code) and ~1KB to First Load JS overall (282KB → 283KB) — the `FooterNewsletterProvider`/context addition is a few hundred bytes, not a new dependency.
+- One regression was caught and fixed **during** this milestone, not after: importing `useHideFooterNewsletter` through the `@/providers` barrel (instead of directly from `footer-newsletter-provider`) briefly inflated First Load JS by 23KB, because the barrel re-exports `AppProviders` and its whole provider graph (Lenis, GSAP, Radix Tooltip, Sonner). Importing the hook from its own module — matching how `useHeaderMode` is already imported in `HeaderShell.tsx` — resolved it. Documented here as the reason every cross-cutting hook in this codebase is imported from its specific file, never the barrel.
+- **Final CTA's background is a single static `next/image`** with no client JS at all (unlike the hero, which gates a video behind viewport/reduced-motion/error checks) — the brief's own note that this section needs no motion beyond a standard reveal meant it could stay a pure Server Component.
+- **FAQ content is fully server-rendered HTML** even though `FAQAccordion` is a Client Component — Next.js still renders Client Components to HTML on the server, so all ten questions and answers are present and crawlable/searchable on first response, not hidden behind client-side interaction.
+
+### Accessibility summary
+
+- **Heading hierarchy verified programmatically**, not just by eye: exactly one `<h1>` (the hero) and no level skips across all twelve sections, end to end. Every FAQ question is a real `<h3>` for free — Radix's `Accordion.Header` renders as `Primitive.h3` by default, so no manual heading markup was needed inside `FAQAccordion`.
+- **FAQ accordion is keyboard-operable** (Enter/Space toggle a focused trigger, confirmed via Playwright keyboard events, not just a mouse click) and enforces one-open-at-a-time (`type="single" collapsible`) so the page can't grow unpredictably long.
+- **Contrast checked by sampling actual rendered pixels**, not assumed: Final CTA headline/body text against the real (image + scrim) background measured 10.5–12.7:1, and the lower-emphasis trust-row caption text (`text-white/70`) measured 9.36:1 — both comfortably clear of WCAG AA's 4.5:1 for normal text.
+- **Touch targets measured on a real 390px viewport**: FAQ triggers (61–90px tall), the newsletter subscribe button (44px), and both Final CTA links (52px) all meet the 44px minimum.
+- **Newsletter status messages use `aria-live="polite"`** (`role="status"`), consistent with the configurator's price region and the gallery's filtered-count announcement from Part 2 — screen reader users hear submission results they may not visually notice.
+
+### SEO summary
+
+- **`FAQPage` schema is emitted by `FAQSection` itself**, generated from the exact same `faqItems` array the visible accordion renders — real markup driving real schema, per `HOMEPAGE_STRATEGY.md` §9's explicit warning against structured data describing content that isn't visibly present.
+- **Organization/WebSite schema, canonical URL, Open Graph, and Twitter Card metadata** were already in place at the root layout (`config/seo.ts`) before this milestone and are unchanged — the homepage inherits them without any route-level override needed.
+- **FAQ answers restate figures that already appear elsewhere on the page** (wind/snow ratings, warranty term, installation time) verbatim rather than approximately, so the FAQ can't become a source of contradictory information for either users or search engines crawling the page.
+
+### Future enhancement opportunities
+
+- **FAQ**: once a dedicated `/support/faq` page exists, `FAQAccordion` and `faqItems` are already shaped to support a larger question set there, filtered/searchable — the homepage would keep its curated ten.
+- **Newsletter**: `subscribeNewsletter`'s only remaining work is the ESP call itself (Klaviyo/Mailchimp/Resend audience API) in place of its current "validate and return success" stub — the form contract (`SubscribeNewsletterState`) doesn't need to change on either the homepage or footer instance.
+- **Final CTA**: the brief allows "background image or subtle video" — a real installation video loop could replace `final-cta.jpg` later using the exact gating pattern `HeroMedia` already established (desktop-only, reduced-motion-off, error-falls-back-to-poster), rather than inventing a second mechanism.
+- **`scroll-mt-header`**: now that the header's real height is a CSS variable, any future fixed-position element that needs to reserve space relative to it (a second announcement bar, a persistent cart drawer trigger) can read the same `--header-stack-height` custom property instead of guessing a new static offset.
+
+### Verification (Part 4)
+
+Playwright/Chromium against the production build, across desktop (1440px), mobile (390px), `reducedMotion: 'reduce'`, and keyboard interaction, plus a full-page (all twelve sections, both breakpoints) design-review pass under reduced motion specifically to avoid `whileInView` timing artifacts in a fast programmatic scroll: FAQ accordion open/close, single-open enforcement, and keyboard toggle all confirmed; `FAQPage` schema present; Final CTA's both links verified against their real hrefs (`/configurator`, `/contact/quote`); newsletter form exercised end-to-end with both an invalid and a valid email through the real server action, success message rendered; footer newsletter confirmed hidden on the homepage and still present on `/contact`. Final pass: zero page errors, zero horizontal overflow at 390px/1440px (including real anchor navigation to `#cta` and an actual `window.scrollBy` attempt), `tsc --noEmit` clean, `eslint` clean, `next build` clean (First Load JS 283KB, route fully static).

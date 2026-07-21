@@ -220,6 +220,12 @@
   --space-section-sm: 4rem; /* 64px */
   --space-section-md: 6rem; /* 96px */
   --space-section-lg: 8rem; /* 128px */
+
+  /* Kept in sync at runtime by HeaderShell's ResizeObserver (real height —
+   * announcement bar wrap, dismiss, copy changes all affect it). This
+   * static value is only the pre-hydration/no-JS fallback, not a guess
+   * meant to stay accurate on its own. */
+  --header-stack-height: 6rem;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -419,6 +425,19 @@
 }
 @utility z-tooltip {
   z-index: var(--z-tooltip);
+}
+
+/**
+ * Anchor-scroll offset for every section, keyed to the fixed header
+ * stack's real measured height (`--header-stack-height`) rather than a
+ * static guess — a static `scroll-mt-*` value is wrong the moment the
+ * announcement bar wraps to two lines (mobile) or is dismissed, since the
+ * actual fixed stack covering the viewport's top edge is a different
+ * height in each case. Replaces `scroll-mt-24` everywhere a section
+ * needs anchor-scroll clearance under the header.
+ */
+@utility scroll-mt-header {
+  scroll-margin-top: var(--header-stack-height);
 }
 
 @utility section-py-sm {

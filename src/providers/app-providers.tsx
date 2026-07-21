@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { SmoothScrollProvider } from "@/providers/smooth-scroll-provider";
 import { HeaderModeProvider } from "@/providers/header-mode-provider";
+import { FooterNewsletterProvider } from "@/providers/footer-newsletter-provider";
 
 /**
  * Single composition root for every app-wide provider. The root
@@ -17,7 +18,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <ThemeProvider>
       <SmoothScrollProvider>
         <TooltipProvider delayDuration={200}>
-          <HeaderModeProvider>{children}</HeaderModeProvider>
+          <HeaderModeProvider>
+            <FooterNewsletterProvider>{children}</FooterNewsletterProvider>
+          </HeaderModeProvider>
           <Toaster position="bottom-right" />
         </TooltipProvider>
       </SmoothScrollProvider>

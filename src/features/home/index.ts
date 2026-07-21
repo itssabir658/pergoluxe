@@ -7,3 +7,7 @@ export { FeaturedProjectsSection } from "./components/FeaturedProjectsSection";
 export { ComparisonSection } from "./components/ComparisonSection";
 export { TestimonialsSection } from "./components/TestimonialsSection";
 export { InstallationJourneySection } from "./components/InstallationJourneySection";
+export { FAQSection } from "./components/FAQSection";
+export { FinalCTASection } from "./components/FinalCTASection";
+export { NewsletterSection } from "./components/NewsletterSection";
+export { SuppressFooterNewsletter } from "./components/SuppressFooterNewsletter";

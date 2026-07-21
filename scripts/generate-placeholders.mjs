@@ -62,6 +62,40 @@ async function heroPoster() {
     .toFile(path.join(imagesDir, "hero-poster.jpg"));
 }
 
+/**
+ * Final CTA closing image — the strategy doc calls for "the single best
+ * project photo on the site," but every project tile is already shown in
+ * Featured Projects, so re-using one full-bleed here would read as the
+ * same asset twice on one page. This is deliberately warmer/brighter than
+ * the hero (golden-hour amber vs. the hero's dark bronze-black) so the
+ * page's last visual beat feels like a distinct, optimistic close rather
+ * than a variation of the opening image.
+ */
+async function finalCta() {
+  const w = 2400;
+  const h = 1350;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+    <defs>
+      <linearGradient id="bg" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0" stop-color="#2b1c10"/>
+        <stop offset="0.55" stop-color="#5c3d1f"/>
+        <stop offset="1" stop-color="#a8712f"/>
+      </linearGradient>
+      <linearGradient id="glow" x1="0" y1="1" x2="1" y2="0.2">
+        <stop offset="0" stop-color="#f2b969" stop-opacity="0"/>
+        <stop offset="1" stop-color="#f6cf8e" stop-opacity="0.32"/>
+      </linearGradient>
+    </defs>
+    <rect width="${w}" height="${h}" fill="url(#bg)"/>
+    <rect width="${w}" height="${h}" fill="url(#glow)"/>
+    ${louvers({ width: w, height: h, angle: -5, color: "#3a2410", opacity: 0.1, beam: 30, gap: 150 })}
+    ${vignette(w, h, 0.5)}
+  </svg>`;
+  await sharp(Buffer.from(svg))
+    .jpeg({ quality: 72, mozjpeg: true })
+    .toFile(path.join(imagesDir, "final-cta.jpg"));
+}
+
 const collectionTones = {
   "attached-pergolas": { from: "#efe6d8", to: "#ddcdb6", angle: 0 },
   "freestanding-pergolas": { from: "#ece4d9", to: "#d6c3ad", angle: 90 },
@@ -192,6 +226,7 @@ async function projectImage({ slug, from, to, line, angle, opacity }) {
 
 await mkdir(imagesDir, { recursive: true });
 await heroPoster();
+await finalCta();
 for (const [handle, tone] of Object.entries(collectionTones)) {
   await collectionImage(handle, tone);
 }

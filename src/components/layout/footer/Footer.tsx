@@ -16,7 +16,7 @@ import { Grid } from "@/components/layout/Grid";
 import { Stack } from "@/components/layout/Stack";
 import { Divider } from "@/components/layout/Divider";
 import { Logo } from "@/components/layout/header/Logo";
-import { FooterNewsletter } from "@/components/layout/footer/FooterNewsletter";
+import { FooterNewsletterSlot } from "@/components/layout/footer/FooterNewsletterSlot";
 import { siteConfig } from "@/config/site";
 import { footerNav, legalNav } from "@/config/nav";
 
@@ -102,8 +102,7 @@ export function Footer() {
             ))}
 
             <Stack gap="sm">
-              <p className="text-label text-muted-foreground">Stay in the loop</p>
-              <FooterNewsletter />
+              <FooterNewsletterSlot />
             </Stack>
           </Grid>
         </Section>

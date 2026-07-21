@@ -20,7 +20,7 @@ import { benefits } from "@/features/home/constants";
  */
 export function SignatureBenefits() {
   return (
-    <Section id="benefits" spacing="lg" className="scroll-mt-24">
+    <Section id="benefits" spacing="lg" className="scroll-mt-header">
       <Container>
         <ScrollReveal className="max-w-2xl">
           <p className="text-label text-primary">Why Pergoluxe</p>

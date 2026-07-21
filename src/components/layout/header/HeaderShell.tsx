@@ -81,6 +81,18 @@ export function HeaderShell({
     return () => observer.disconnect();
   }, []);
 
+  // Kept in sync with the real stack height so every section's
+  // `scroll-mt-header` (tokens.css) offsets by the actual fixed header,
+  // not a static guess — see that utility's comment for why this matters.
+  useLayoutEffect(() => {
+    if (stackHeight > 0) {
+      document.documentElement.style.setProperty(
+        "--header-stack-height",
+        `${stackHeight}px`,
+      );
+    }
+  }, [stackHeight]);
+
   const allowTransparent = headerMode === "solid" ? false : transparentUntilScroll;
   const transparent = allowTransparent && !scrolled;
 

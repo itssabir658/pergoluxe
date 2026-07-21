@@ -1,4 +1,4 @@
-import { CalendarCheck, Layers, Wrench } from "lucide-react";
+import { CalendarCheck, CreditCard, Layers, ShieldCheck, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type TrustStat = {
@@ -56,3 +56,36 @@ export const heroTrustLine = [
   "5,000+ Installations",
   "Licensed & Insured",
 ] as const;
+
+/**
+ * The four-item reassurance row on the Final CTA — the same facts as
+ * `trustStats`/`trustFeatures`, restated compactly since that's the exact
+ * set the brief calls for there (plus financing, which those two don't
+ * cover). Kept separate from `trustFeatures` rather than reused directly:
+ * the Final CTA's row is a fixed, curated four ("Warranty," "Free
+ * consultation," "Professional installation," "Finance available"), not
+ * whatever `trustFeatures` happens to contain — the two lists are allowed
+ * to diverge without this section silently changing.
+ */
+export const finalCtaIndicators: TrustFeature[] = [
+  {
+    icon: ShieldCheck,
+    title: "10-Year Warranty",
+    description: "Structure and finish, every model, no exceptions.",
+  },
+  {
+    icon: CalendarCheck,
+    title: "Free Consultation",
+    description: "A specialist plans your space before you commit to anything.",
+  },
+  {
+    icon: Wrench,
+    title: "Professional Installation",
+    description: "Installed by our own certified teams, never subcontracted.",
+  },
+  {
+    icon: CreditCard,
+    title: "Financing Available",
+    description: "Monthly payment plans through our financing partner.",
+  },
+];

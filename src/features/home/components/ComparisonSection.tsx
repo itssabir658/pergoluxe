@@ -10,7 +10,7 @@ import { ComparisonTable } from "@/features/product";
  */
 export function ComparisonSection() {
   return (
-    <Section id="compare" spacing="lg" className="bg-surface scroll-mt-24">
+    <Section id="compare" spacing="lg" className="bg-surface scroll-mt-header">
       <Container size="wide">
         <ScrollReveal className="max-w-2xl">
           <p className="text-label text-primary">Compare</p>

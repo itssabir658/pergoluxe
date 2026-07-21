@@ -17,7 +17,7 @@ import { ProcessTimeline } from "@/features/installation-journey";
  */
 export function InstallationJourneySection() {
   return (
-    <Section id="process" spacing="lg" className="bg-surface scroll-mt-24">
+    <Section id="process" spacing="lg" className="bg-surface scroll-mt-header">
       <Container size="narrow">
         <ScrollReveal className="text-center">
           <p className="text-label text-primary">How it works</p>

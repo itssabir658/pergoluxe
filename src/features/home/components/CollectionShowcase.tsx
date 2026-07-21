@@ -19,7 +19,7 @@ import { CollectionCard } from "@/features/home/components/CollectionCard";
  */
 export function CollectionShowcase() {
   return (
-    <Section id="collections" spacing="lg" className="scroll-mt-24">
+    <Section id="collections" spacing="lg" className="scroll-mt-header">
       <Container>
         <ScrollReveal className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>

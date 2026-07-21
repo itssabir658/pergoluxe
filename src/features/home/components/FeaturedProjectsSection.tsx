@@ -15,7 +15,7 @@ import { featuredProjects, ProjectGallery } from "@/features/projects";
  */
 export function FeaturedProjectsSection() {
   return (
-    <Section id="projects" spacing="lg" className="scroll-mt-24">
+    <Section id="projects" spacing="lg" className="scroll-mt-header">
       <Container>
         <ScrollReveal className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
