@@ -134,76 +134,80 @@ pergoluxe/
 
 ## 3. Folder-by-Folder Rationale
 
-| Folder | Why it exists | Use it when | Do NOT use it when |
-|---|---|---|---|
-| `app/` | Next.js routing + composition boundary only. Pages assemble features; they don't contain business logic. | Defining a route, its layout, loading/error states, or metadata. | Writing a data-fetching query, a form handler, or any logic reused elsewhere — that belongs in `features/*` or `lib/*`, imported into the page. |
-| `features/*` | Vertical slice per business domain. Everything needed to build "the cart" or "the PDP" lives together, so a feature can be understood, tested, and even deleted without archaeology. | The code is specific to one domain: a `<VariantSelector>` only `product` uses, a `useCart()` hook only `cart` uses. | The thing is generic UI (a `<Badge>`) or generic logic (`formatMoney`) with no domain meaning — that's `components/shared` or `utils/`. |
-| `components/ui` | Unmodified/lightly themed shadcn/ui primitives. The seam between "our design system" and a vendored library. | Adding or customizing a primitive (Button variants, Dialog). | Building anything with business meaning (ProductCard, CartLineItem) — those are composites, not primitives. |
-| `components/layout` | Structural chrome that wraps every page: header, footer, nav, page containers. | The component defines page skeleton, not page content. | The component is a page's actual content — that's a feature or `app/` composition. |
-| `components/shared` | Composites reused by 2+ features (e.g., `<ProductCard>` appears in `collection`, `search`, and `projects`). | A component crosses feature boundaries. Promote it here only after the **second** real usage. | On first use — keep it in the feature until duplication is proven, not assumed. |
-| `animations/` | Decouples animation implementation (GSAP timelines, Framer variants) from the components that trigger them, so a designer/animator change doesn't require touching component logic. | Defining a reusable timeline, ScrollTrigger config, or motion variant object consumed by multiple components. | One-off `whileHover={{ scale: 1.05 }}` inline props — trivial, single-use animation stays inline in the component. |
-| `lib/*` | The only place allowed to know about an external system's API shape (Shopify GraphQL, Sanity GROQ, Cloudinary REST, Resend). Everything here is typed, framework-agnostic, and testable in isolation. | Writing a query/mutation/fragment, or a client instantiation, for a specific external system. | Business rules ("hide out-of-stock variants", "compute discount badge") — those belong in `services/` or the feature, not the SDK wrapper. |
-| `services/` | Business logic that composes multiple `lib/*` calls or cross-feature concerns, with zero React/Next.js dependency — pure functions/classes, unit-testable without mocking the framework. | Logic needs both Shopify and Sanity data (e.g., "merge Shopify price with Sanity story content for a PDP"), or logic is complex enough to deserve isolated unit tests. | The logic is trivial or belongs to a single feature only — keep it in that feature's `utils/` instead. |
-| `hooks/` | Global, domain-agnostic hooks used across features (`useMediaQuery`, `useDebounce`, `useOnClickOutside`). | The hook has no knowledge of cart/product/checkout — it would be equally at home in an unrelated app. | The hook wraps domain logic (`useAddToCart`) — that belongs in the feature's own `hooks/`. |
-| `actions/` | Top-level Server Actions with no single feature owner (newsletter signup, generic contact form used site-wide). | The mutation doesn't belong to one feature's domain. | The action is domain-specific (`addToCart`, `applyDiscount`) — colocate it in `features/*/actions`. |
-| `providers/` | App-wide client-side context that must wrap the whole tree (cart state, theme, analytics init). | The state must be available globally and survive route changes. | The state is local to one page or feature — use component state or a feature-local context instead. |
-| `config/` | Typed, environment-validated configuration objects consumed at build/runtime (site metadata, nav structure, `env.ts` via `@t3-oss/env-nextjs`). | The value configures app-wide behavior and should never be hardcoded twice. | The value is a true constant with no environment dependency — that's `constants/`. |
-| `constants/` | Magic-value-free literals: route paths, pagination limits, regex patterns, enum-like unions. | A literal value is repeated more than once or is easy to typo (a route string, a breakpoint number). | The value is config-shaped (varies per environment) — that's `config/`, not `constants/`. |
-| `types/` | Global/shared TypeScript types and ambient declarations with no single owner (e.g., a `Money` type used everywhere). | A type is genuinely cross-cutting. | The type belongs to one feature or one `lib/*` module — colocate it there instead (`features/product/types`, `lib/shopify/types.ts`). |
-| `utils/` | Pure, stateless, generic helper functions with zero domain knowledge (`cn`, `formatMoney`, `slugify`, `truncate`). | The function could be published as its own npm package tomorrow with no edits. | The function encodes a business rule — that's `services/` or a feature's own `utils/`. |
-| `styles/` | Design-token CSS (`@theme` blocks) imported once by `globals.css`. | Defining or updating the token scale (spacing, color, radius, timing). | Writing component-specific CSS — Tailwind utility classes in the component handle that. |
-| `sanity/` | Studio schema definitions and desk structure, versioned with the app so content model changes ship atomically with the code that depends on them. | Adding/changing a document type, singleton, or the Studio's editorial UI. | Querying content for the frontend — that's `lib/sanity/queries`, not the schema folder. |
+| Folder              | Why it exists                                                                                                                                                                                         | Use it when                                                                                                                                                            | Do NOT use it when                                                                                                                              |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/`              | Next.js routing + composition boundary only. Pages assemble features; they don't contain business logic.                                                                                              | Defining a route, its layout, loading/error states, or metadata.                                                                                                       | Writing a data-fetching query, a form handler, or any logic reused elsewhere — that belongs in `features/*` or `lib/*`, imported into the page. |
+| `features/*`        | Vertical slice per business domain. Everything needed to build "the cart" or "the PDP" lives together, so a feature can be understood, tested, and even deleted without archaeology.                  | The code is specific to one domain: a `<VariantSelector>` only `product` uses, a `useCart()` hook only `cart` uses.                                                    | The thing is generic UI (a `<Badge>`) or generic logic (`formatMoney`) with no domain meaning — that's `components/shared` or `utils/`.         |
+| `components/ui`     | Unmodified/lightly themed shadcn/ui primitives. The seam between "our design system" and a vendored library.                                                                                          | Adding or customizing a primitive (Button variants, Dialog).                                                                                                           | Building anything with business meaning (ProductCard, CartLineItem) — those are composites, not primitives.                                     |
+| `components/layout` | Structural chrome that wraps every page: header, footer, nav, page containers.                                                                                                                        | The component defines page skeleton, not page content.                                                                                                                 | The component is a page's actual content — that's a feature or `app/` composition.                                                              |
+| `components/shared` | Composites reused by 2+ features (e.g., `<ProductCard>` appears in `collection`, `search`, and `projects`).                                                                                           | A component crosses feature boundaries. Promote it here only after the **second** real usage.                                                                          | On first use — keep it in the feature until duplication is proven, not assumed.                                                                 |
+| `animations/`       | Decouples animation implementation (GSAP timelines, Framer variants) from the components that trigger them, so a designer/animator change doesn't require touching component logic.                   | Defining a reusable timeline, ScrollTrigger config, or motion variant object consumed by multiple components.                                                          | One-off `whileHover={{ scale: 1.05 }}` inline props — trivial, single-use animation stays inline in the component.                              |
+| `lib/*`             | The only place allowed to know about an external system's API shape (Shopify GraphQL, Sanity GROQ, Cloudinary REST, Resend). Everything here is typed, framework-agnostic, and testable in isolation. | Writing a query/mutation/fragment, or a client instantiation, for a specific external system.                                                                          | Business rules ("hide out-of-stock variants", "compute discount badge") — those belong in `services/` or the feature, not the SDK wrapper.      |
+| `services/`         | Business logic that composes multiple `lib/*` calls or cross-feature concerns, with zero React/Next.js dependency — pure functions/classes, unit-testable without mocking the framework.              | Logic needs both Shopify and Sanity data (e.g., "merge Shopify price with Sanity story content for a PDP"), or logic is complex enough to deserve isolated unit tests. | The logic is trivial or belongs to a single feature only — keep it in that feature's `utils/` instead.                                          |
+| `hooks/`            | Global, domain-agnostic hooks used across features (`useMediaQuery`, `useDebounce`, `useOnClickOutside`).                                                                                             | The hook has no knowledge of cart/product/checkout — it would be equally at home in an unrelated app.                                                                  | The hook wraps domain logic (`useAddToCart`) — that belongs in the feature's own `hooks/`.                                                      |
+| `actions/`          | Top-level Server Actions with no single feature owner (newsletter signup, generic contact form used site-wide).                                                                                       | The mutation doesn't belong to one feature's domain.                                                                                                                   | The action is domain-specific (`addToCart`, `applyDiscount`) — colocate it in `features/*/actions`.                                             |
+| `providers/`        | App-wide client-side context that must wrap the whole tree (cart state, theme, analytics init).                                                                                                       | The state must be available globally and survive route changes.                                                                                                        | The state is local to one page or feature — use component state or a feature-local context instead.                                             |
+| `config/`           | Typed, environment-validated configuration objects consumed at build/runtime (site metadata, nav structure, `env.ts` via `@t3-oss/env-nextjs`).                                                       | The value configures app-wide behavior and should never be hardcoded twice.                                                                                            | The value is a true constant with no environment dependency — that's `constants/`.                                                              |
+| `constants/`        | Magic-value-free literals: route paths, pagination limits, regex patterns, enum-like unions.                                                                                                          | A literal value is repeated more than once or is easy to typo (a route string, a breakpoint number).                                                                   | The value is config-shaped (varies per environment) — that's `config/`, not `constants/`.                                                       |
+| `types/`            | Global/shared TypeScript types and ambient declarations with no single owner (e.g., a `Money` type used everywhere).                                                                                  | A type is genuinely cross-cutting.                                                                                                                                     | The type belongs to one feature or one `lib/*` module — colocate it there instead (`features/product/types`, `lib/shopify/types.ts`).           |
+| `utils/`            | Pure, stateless, generic helper functions with zero domain knowledge (`cn`, `formatMoney`, `slugify`, `truncate`).                                                                                    | The function could be published as its own npm package tomorrow with no edits.                                                                                         | The function encodes a business rule — that's `services/` or a feature's own `utils/`.                                                          |
+| `styles/`           | Design-token CSS (`@theme` blocks) imported once by `globals.css`.                                                                                                                                    | Defining or updating the token scale (spacing, color, radius, timing).                                                                                                 | Writing component-specific CSS — Tailwind utility classes in the component handle that.                                                         |
+| `sanity/`           | Studio schema definitions and desk structure, versioned with the app so content model changes ship atomically with the code that depends on them.                                                     | Adding/changing a document type, singleton, or the Studio's editorial UI.                                                                                              | Querying content for the frontend — that's `lib/sanity/queries`, not the schema folder.                                                         |
 
 ---
 
 ## 4. Naming Conventions
 
 ### Folders
+
 - `kebab-case` always: `product-card/`, `variant-selector/`, not `productCard/` or `ProductCard/`.
 - Route groups use parentheses and stay lowercase: `(marketing)`, `(shop)`, `(account)`.
 - Dynamic segments match Shopify/Sanity vocabulary exactly: `[handle]` for products/collections (Shopify's own term), `[slug]` for Sanity-authored pages.
 
 ### Files
-| Type | Convention | Example |
-|---|---|---|
-| React component | `PascalCase.tsx`, filename = default export name | `ProductGallery.tsx` |
-| Hook | `camelCase.ts`, always prefixed `use` | `useAddToCart.ts` |
-| Server Action | `camelCase.ts`, verb-first, `"use server"` at top | `createCartLine.ts` |
-| Route file (App Router reserved) | lowercase, framework-mandated | `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx` |
-| Type-only file | `camelCase.types.ts` or `types.ts` inside a `types/` folder | `product.types.ts` |
-| GraphQL query/mutation | `camelCase.ts`, noun/verb matching the operation | `getProductByHandle.ts`, `createCart.ts` |
-| GROQ query | `camelCase.ts` inside `queries/` | `getHomepage.ts` |
-| Constant file | `camelCase.ts`, plural for collections | `routes.ts`, `breakpoints.ts` |
-| Test file | mirrors source name | `formatMoney.test.ts` |
-| Barrel export | `index.ts`, one per feature root only — never nested | `features/product/index.ts` |
+
+| Type                             | Convention                                                  | Example                                              |
+| -------------------------------- | ----------------------------------------------------------- | ---------------------------------------------------- |
+| React component                  | `PascalCase.tsx`, filename = default export name            | `ProductGallery.tsx`                                 |
+| Hook                             | `camelCase.ts`, always prefixed `use`                       | `useAddToCart.ts`                                    |
+| Server Action                    | `camelCase.ts`, verb-first, `"use server"` at top           | `createCartLine.ts`                                  |
+| Route file (App Router reserved) | lowercase, framework-mandated                               | `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx` |
+| Type-only file                   | `camelCase.types.ts` or `types.ts` inside a `types/` folder | `product.types.ts`                                   |
+| GraphQL query/mutation           | `camelCase.ts`, noun/verb matching the operation            | `getProductByHandle.ts`, `createCart.ts`             |
+| GROQ query                       | `camelCase.ts` inside `queries/`                            | `getHomepage.ts`                                     |
+| Constant file                    | `camelCase.ts`, plural for collections                      | `routes.ts`, `breakpoints.ts`                        |
+| Test file                        | mirrors source name                                         | `formatMoney.test.ts`                                |
+| Barrel export                    | `index.ts`, one per feature root only — never nested        | `features/product/index.ts`                          |
 
 ### Components
+
 - **PascalCase**, descriptive noun phrases, no abbreviations: `VariantSelector`, not `VarSel`.
 - Compound/sub-components use dot-adjacent naming via composition, not filename suffixes: prefer `<Accordion.Item>` (Radix pattern) over `AccordionItem.tsx` duplicated per parent.
 - Boolean props read as questions: `isOpen`, `hasDiscount`, `disabled` — never `open: 0 | 1` or ambiguous flags.
 - Client Components that must be marked are still named identically to their Server counterparts would be — the `"use client"` directive is the signal, not the filename (no `.client.tsx` suffix; that convention rotted with Next 12).
 
 ### Imports & Aliases
+
 - Always import via the `@/*` alias family defined in `tsconfig.json` — never more than two `../` levels in a relative import (enforced by the `no-restricted-imports` ESLint rule).
 - Alias map:
-  | Alias | Resolves to |
-  |---|---|
-  | `@/*` | `src/*` |
-  | `@/app/*` | `src/app/*` |
-  | `@/features/*` | `src/features/*` |
-  | `@/components/*` | `src/components/*` |
-  | `@/ui/*` | `src/components/ui/*` |
-  | `@/lib/*` | `src/lib/*` |
-  | `@/hooks/*` | `src/hooks/*` |
-  | `@/actions/*` | `src/actions/*` |
-  | `@/services/*` | `src/services/*` |
-  | `@/providers/*` | `src/providers/*` |
-  | `@/config/*` | `src/config/*` |
-  | `@/constants/*` | `src/constants/*` |
-  | `@/types/*` | `src/types/*` |
-  | `@/utils/*` | `src/utils/*` |
-  | `@/animations/*` | `src/animations/*` |
-  | `@/sanity/*` | `sanity/*` |
+  | Alias            | Resolves to           |
+  | ---------------- | --------------------- |
+  | `@/*`            | `src/*`               |
+  | `@/app/*`        | `src/app/*`           |
+  | `@/features/*`   | `src/features/*`      |
+  | `@/components/*` | `src/components/*`    |
+  | `@/ui/*`         | `src/components/ui/*` |
+  | `@/lib/*`        | `src/lib/*`           |
+  | `@/hooks/*`      | `src/hooks/*`         |
+  | `@/actions/*`    | `src/actions/*`       |
+  | `@/services/*`   | `src/services/*`      |
+  | `@/providers/*`  | `src/providers/*`     |
+  | `@/config/*`     | `src/config/*`        |
+  | `@/constants/*`  | `src/constants/*`     |
+  | `@/types/*`      | `src/types/*`         |
+  | `@/utils/*`      | `src/utils/*`         |
+  | `@/animations/*` | `src/animations/*`    |
+  | `@/sanity/*`     | `sanity/*`            |
 - Import order (enforced by `eslint-plugin-import` grouping, auto-fixed): (1) external packages, (2) `@/*` aliases, (3) relative imports (siblings only), (4) styles. Blank line between groups.
 - A feature's public surface is its `index.ts` barrel. External consumers (`app/`, other features) import from `@/features/product`, never reach into `@/features/product/components/VariantSelector` directly — this keeps internal refactors from breaking distant call sites.
 
@@ -212,9 +216,11 @@ pergoluxe/
 ## 5. Reusable Architecture Patterns
 
 ### Server Components (default)
+
 Every component starts as a Server Component. It fetches its own data with `async/await` directly in the component body using `lib/shopify` or `lib/sanity` functions — no `useEffect` fetch, no client-side waterfall. Server Components render product data, marketing content, SEO metadata: anything that doesn't need interactivity.
 
 ### Client Components (opt-in, justified)
+
 Add `"use client"` only at the leaf that actually needs it: a variant swatch that responds to clicks, a cart drawer with open/close state, a form with `react-hook-form`. Push the boundary as far down the tree as possible — a page is not a Client Component just because one button inside it needs `onClick`; only that button is.
 
 ```tsx
@@ -223,7 +229,7 @@ export async function ProductPage({ handle }: { handle: string }) {
   const product = await getProductByHandle(handle); // lib/shopify
   return (
     <div>
-      <ProductGallery images={product.images} />      {/* Server */}
+      <ProductGallery images={product.images} /> {/* Server */}
       <VariantSelector variants={product.variants} /> {/* Client leaf */}
     </div>
   );
@@ -231,37 +237,43 @@ export async function ProductPage({ handle }: { handle: string }) {
 ```
 
 ### Data Fetching
+
 - All reads go through typed functions in `lib/shopify` / `lib/sanity` — never raw `fetch` in a component.
 - Shopify reads use `fetch` with Next's extended `cache`/`next.tags` options so on-demand revalidation (webhooks) can target exact tags (`product-${handle}`, `collection-${handle}`).
 - Sanity reads use the CDN-backed client for public content and the non-CDN client only for preview/draft mode.
 - Parallel-fetch independent data with `Promise.all` at the page level; never `await` sequentially when requests don't depend on each other.
 
 ### Mutations
+
 - All writes (add to cart, submit quote form, newsletter signup) are **Server Actions**, colocated in the owning feature's `actions/` folder, validated with a Zod schema shared between client form and server action.
 - Client forms use `useActionState`/`react-hook-form` + `zodResolver` for instant validation; the Server Action re-validates the same schema server-side — never trust client validation alone.
 - Every mutation that changes visible data calls `revalidateTag`/`revalidatePath` for the exact affected scope — never a blanket `revalidatePath("/")`.
 
 ### Loading UI
+
 - Route-level `loading.tsx` provides the route's skeleton, shown automatically while the Server Component tree resolves — no manual spinner state.
 - Component-level: wrap slow, non-critical subtrees (reviews, recommendations) in `<Suspense fallback={<Skeleton />}>` so the shell (header, gallery, price, add-to-cart) streams first.
 
 ### Error Boundaries
+
 - `error.tsx` per route segment catches render/data errors for that segment only, with a retry action (`reset()`) — a failure in "related products" never takes down the whole PDP if it's isolated behind its own Suspense boundary with a local error boundary.
 - `global-error.tsx` at the root catches catastrophic failures outside all segment boundaries and is the only place allowed to render outside the root layout.
 - `not-found.tsx` is triggered explicitly via `notFound()` when a Shopify handle or Sanity slug resolves to nothing — never a silent empty render.
 
 ### Streaming & Suspense
+
 - PPR (Partial Prerendering, `experimental.ppr: "incremental"`) is enabled per-route via the `experimental_ppr = true` route config once a route's static shell is separated from its dynamic holes (e.g., PDP: static content shell prerendered, live inventory/price streamed).
 - Anything reading `cookies()`/`headers()`/uncached data must be wrapped in `<Suspense>` or it forces the whole route dynamic.
 
 ### Caching
-| Data | Strategy |
-|---|---|
-| Product/collection content | `fetch` with `next: { tags: ["product:<handle>"] }`, revalidated on-demand via Shopify webhook → `/api/revalidate` |
-| Sanity content | CDN client (60s stale-while-revalidate) for published; webhook-driven `revalidateTag` on publish for instant updates where needed |
-| Cart | Never cached — always dynamic, per-session (cookie-based cart ID) |
-| Static marketing pages | Fully static (`force-static` where no personalization exists) |
-| Search results | Short `revalidate` window (e.g. 60s) — freshness matters less than speed here |
+
+| Data                       | Strategy                                                                                                                          |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Product/collection content | `fetch` with `next: { tags: ["product:<handle>"] }`, revalidated on-demand via Shopify webhook → `/api/revalidate`                |
+| Sanity content             | CDN client (60s stale-while-revalidate) for published; webhook-driven `revalidateTag` on publish for instant updates where needed |
+| Cart                       | Never cached — always dynamic, per-session (cookie-based cart ID)                                                                 |
+| Static marketing pages     | Fully static (`force-static` where no personalization exists)                                                                     |
+| Search results             | Short `revalidate` window (e.g. 60s) — freshness matters less than speed here                                                     |
 
 ---
 
@@ -325,7 +337,7 @@ sanity/schemas/
 - **Schemas** — every document schema imports the shared `seo` object type and includes it as an `seo` field, so metadata generation in `app/` is uniform across content types (`generateMetadataFromSanitySeo(doc.seo)`).
 - **Documents vs. Singletons** — a type is a singleton (locked to one document, no "create new") when the business only ever has one of it (`homepage`, `siteSettings`); the Studio's `structure/` customizes the desk to hide the "create" action and pin singletons at the top.
 - **SEO** — modeled once as an `objects/seo.ts` field group, never duplicated per document type. Falls back to `siteSettings` defaults when a page-level field is empty (handled in the metadata-generation function, not duplicated logic per page).
-- **Navigation** — `navigation` singleton models header/footer link trees as an array of `{label, href, children?}` so marketing can restructure nav without a deploy; `config/nav.ts` provides only the *fallback* structure used if Sanity is unreachable at build time.
+- **Navigation** — `navigation` singleton models header/footer link trees as an array of `{label, href, children?}` so marketing can restructure nav without a deploy; `config/nav.ts` provides only the _fallback_ structure used if Sanity is unreachable at build time.
 - **Homepage** — modeled as an ordered array of typed "sections" (`hero`, `featuredProjects`, `testimonialRail`, `faqTeaser`, `ctaBanner`), rendered via a section-registry pattern (`components/shared/SectionRenderer.tsx` maps `_type` → component). This is the one place a small mapping abstraction is justified — the alternative is a giant homepage `page.tsx` with a growing if/else chain every time marketing adds a section.
 - **Projects** — case studies with gallery images (Cloudinary-hosted, referenced by URL/public ID — not Sanity's asset pipeline, to keep one image CDN for the whole app), location, pergola model tag (cross-referenced to a Shopify product handle by string, not a hard reference, since Shopify is the system of record).
 - **Testimonials** — `{author, quote, rating, location, relatedProjectRef?}`, queried with a `count` param for homepage teaser vs. full testimonials page.
@@ -339,16 +351,16 @@ GROQ queries live in `lib/sanity/queries/`, one file per query, each returning a
 
 Defined once in `src/styles/tokens.css` via Tailwind v4's CSS-first `@theme` directive, imported by `globals.css`. No JS token object duplicating these — Tailwind utilities and CSS custom properties (`var(--color-*)`) are the only two consumers, so component code never hardcodes a raw value.
 
-| Category | Scale |
-|---|---|
-| **Spacing** | 4px base unit: `0, 1(4px), 2(8px), 3(12px), 4(16px), 6(24px), 8(32px), 12(48px), 16(64px), 24(96px), 32(128px)` — Tailwind's default scale, extended at the top end for hero/section spacing. |
-| **Typography** | Two families: `--font-display` (headlines, editorial serif/grotesk) and `--font-sans` (UI/body). Type scale: `xs(12) sm(14) base(16) lg(18) xl(20) 2xl(24) 3xl(30) 4xl(36) 5xl(48) 6xl(60) 7xl(72)`, each with a paired `line-height` token — never set line-height ad hoc per component. |
-| **Border Radius** | `sm(4px) md(8px) lg(12px) xl(16px) 2xl(24px) full(9999px)` — premium/architectural feel favors the larger end (`lg`/`xl`) for cards and images; `sm` reserved for inputs/badges. |
-| **Elevation** | 5-step shadow scale (`sm md lg xl 2xl`) using layered, low-opacity shadows (not default browser box-shadow black) for a soft, premium look; a separate `elevation-inset` token for pressed/active states. |
-| **Container Widths** | `sm(640) md(768) lg(1024) xl(1280) 2xl(1440) content(1120)` — `content` is the actual reading/product-grid max-width used site-wide; `2xl` is reserved for full-bleed hero sections only. |
+| Category             | Scale                                                                                                                                                                                                                                                                                                                                                                |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Spacing**          | 4px base unit: `0, 1(4px), 2(8px), 3(12px), 4(16px), 6(24px), 8(32px), 12(48px), 16(64px), 24(96px), 32(128px)` — Tailwind's default scale, extended at the top end for hero/section spacing.                                                                                                                                                                        |
+| **Typography**       | Two families: `--font-display` (headlines, editorial serif/grotesk) and `--font-sans` (UI/body). Type scale: `xs(12) sm(14) base(16) lg(18) xl(20) 2xl(24) 3xl(30) 4xl(36) 5xl(48) 6xl(60) 7xl(72)`, each with a paired `line-height` token — never set line-height ad hoc per component.                                                                            |
+| **Border Radius**    | `sm(4px) md(8px) lg(12px) xl(16px) 2xl(24px) full(9999px)` — premium/architectural feel favors the larger end (`lg`/`xl`) for cards and images; `sm` reserved for inputs/badges.                                                                                                                                                                                     |
+| **Elevation**        | 5-step shadow scale (`sm md lg xl 2xl`) using layered, low-opacity shadows (not default browser box-shadow black) for a soft, premium look; a separate `elevation-inset` token for pressed/active states.                                                                                                                                                            |
+| **Container Widths** | `sm(640) md(768) lg(1024) xl(1280) 2xl(1440) content(1120)` — `content` is the actual reading/product-grid max-width used site-wide; `2xl` is reserved for full-bleed hero sections only.                                                                                                                                                                            |
 | **Animation Timing** | Durations: `fast(150ms) base(250ms) slow(400ms) slower(600ms)`. Easings: `standard(cubic-bezier(0.4,0,0.2,1)) emphasized(cubic-bezier(0.2,0,0,1)) decelerate(cubic-bezier(0,0,0.2,1))`. GSAP and Framer Motion both consume the same named tokens (via `animations/variants`) so a timing change is one edit, not a find-and-replace across two animation libraries. |
-| **Z-Index** | Named scale, never raw numbers in components: `base(0) dropdown(10) sticky(20) overlay(30) drawer(40) modal(50) toast(60) tooltip(70)`. |
-| **Breakpoints** | `sm(640) md(768) lg(1024) xl(1280) 2xl(1536)` — Tailwind defaults, kept unmodified so `useMediaQuery` hook values and CSS breakpoints never drift apart. |
+| **Z-Index**          | Named scale, never raw numbers in components: `base(0) dropdown(10) sticky(20) overlay(30) drawer(40) modal(50) toast(60) tooltip(70)`.                                                                                                                                                                                                                              |
+| **Breakpoints**      | `sm(640) md(768) lg(1024) xl(1280) 2xl(1536)` — Tailwind defaults, kept unmodified so `useMediaQuery` hook values and CSS breakpoints never drift apart.                                                                                                                                                                                                             |
 
 ---
 
@@ -405,7 +417,9 @@ Defined once in `src/styles/tokens.css` via Tailwind v4's CSS-first `@theme` dir
 ## 13. Git Workflow
 
 ### Branches
+
 `type/short-description`, kebab-case, imperative:
+
 - `feature/pdp-variant-selector`
 - `fix/cart-quantity-race-condition`
 - `chore/upgrade-tailwind-v4`
@@ -413,7 +427,9 @@ Defined once in `src/styles/tokens.css` via Tailwind v4's CSS-first `@theme` dir
 - `docs/architecture-update`
 
 ### Commits
+
 [Conventional Commits](https://www.conventionalcommits.org/), imperative mood, scoped to the affected area:
+
 ```
 feat(product): add variant selector with URL-persisted state
 fix(cart): prevent duplicate line items on rapid add-to-cart clicks
@@ -423,10 +439,13 @@ docs(architecture): document PPR adoption criteria
 chore(deps): bump next to 15.3.0
 test(checkout): add e2e coverage for hosted checkout hand-off
 ```
+
 Types: `feat fix perf refactor docs chore test style ci build`.
 
 ### Pull Requests
+
 `<Type>: <imperative summary>`, matching commit type conventions, e.g.:
+
 - `Feat: Add pergola configurator step 1 — dimension input`
 - `Fix: Resolve cart drawer focus trap not releasing on close`
 
@@ -439,46 +458,25 @@ PR description always states: what changed, why, and how it was verified (screen
 Ordered; each phase assumes the previous is complete. This is the build sequence from init to production.
 
 **Phase 0 — Foundations**
+
 1. Repo scaffold (this document), tooling (ESLint/Prettier/TS strict/Husky pre-commit), CI pipeline skeleton (typecheck, lint, test on every PR).
 2. Design tokens in `styles/tokens.css`; shadcn/ui installed and themed to tokens.
 3. Environment/config layer: `config/env.ts` (typed, validated), `.env` provisioned for Shopify/Sanity/Cloudinary/Resend dev credentials.
 
-**Phase 1 — Content & Commerce Backbones**
-4. `lib/shopify` client + core queries (product, collection, cart) with generated types; verify against a real dev store.
-5. `sanity/` schemas for singletons + core documents (`siteSettings`, `navigation`, `homepage`, `page`); Studio deployed at `/studio`.
-6. `lib/sanity` client + typed GROQ queries for the above.
+**Phase 1 — Content & Commerce Backbones** 4. `lib/shopify` client + core queries (product, collection, cart) with generated types; verify against a real dev store. 5. `sanity/` schemas for singletons + core documents (`siteSettings`, `navigation`, `homepage`, `page`); Studio deployed at `/studio`. 6. `lib/sanity` client + typed GROQ queries for the above.
 
-**Phase 2 — Layout & Global Chrome**
-7. `components/layout` — header, footer, mobile nav — sourced from the `navigation` singleton with `config/nav.ts` static fallback.
-8. Root `layout.tsx`, `providers/` (theme, cart shell), global error/not-found boundaries.
+**Phase 2 — Layout & Global Chrome** 7. `components/layout` — header, footer, mobile nav — sourced from the `navigation` singleton with `config/nav.ts` static fallback. 8. Root `layout.tsx`, `providers/` (theme, cart shell), global error/not-found boundaries.
 
-**Phase 3 — Commerce Core**
-9. `features/collection` — PLP grid, filters, sort, pagination; Suspense-streamed grid.
-10. `features/product` — PDP: gallery, variant selection (URL state), price/availability, add-to-cart.
-11. `features/cart` — cart store, drawer, Server Action mutations, optimistic updates, tag-based revalidation wired to Shopify webhooks (`/api/webhooks/shopify` → `/api/revalidate`).
-12. `features/checkout` — hosted checkout hand-off, cart-to-checkout continuity testing.
+**Phase 3 — Commerce Core** 9. `features/collection` — PLP grid, filters, sort, pagination; Suspense-streamed grid. 10. `features/product` — PDP: gallery, variant selection (URL state), price/availability, add-to-cart. 11. `features/cart` — cart store, drawer, Server Action mutations, optimistic updates, tag-based revalidation wired to Shopify webhooks (`/api/webhooks/shopify` → `/api/revalidate`). 12. `features/checkout` — hosted checkout hand-off, cart-to-checkout continuity testing.
 
-**Phase 4 — Account & Trust**
-13. `features/customer` — login/register/session, order history.
-14. `features/search` — predictive search combining Shopify + Sanity results.
+**Phase 4 — Account & Trust** 13. `features/customer` — login/register/session, order history. 14. `features/search` — predictive search combining Shopify + Sanity results.
 
-**Phase 5 — Brand & Content Depth**
-15. `features/projects`, `features/testimonials`, `features/faq` — Sanity-sourced, section-registry-driven homepage assembly.
-16. `features/contact` — Resend-backed contact/quote forms with Zod validation shared client/server.
+**Phase 5 — Brand & Content Depth** 15. `features/projects`, `features/testimonials`, `features/faq` — Sanity-sourced, section-registry-driven homepage assembly. 16. `features/contact` — Resend-backed contact/quote forms with Zod validation shared client/server.
 
-**Phase 6 — Differentiator**
-17. `features/configurator` — custom pergola builder (dimensions, finish, options) producing a structured quote request (Resend email + optional Sanity/CRM record) — the feature that separates this from a template Shopify theme.
+**Phase 6 — Differentiator** 17. `features/configurator` — custom pergola builder (dimensions, finish, options) producing a structured quote request (Resend email + optional Sanity/CRM record) — the feature that separates this from a template Shopify theme.
 
-**Phase 7 — Polish**
-18. `animations/` pass — GSAP scroll narratives for marketing sections, Framer Motion micro-interactions for commerce UI, reduced-motion variants verified.
-19. Accessibility audit (axe + manual keyboard/screen-reader pass) against §11.
-20. SEO pass: metadata, JSON-LD, sitemap, OG images verified per route type against §12.
+**Phase 7 — Polish** 18. `animations/` pass — GSAP scroll narratives for marketing sections, Framer Motion micro-interactions for commerce UI, reduced-motion variants verified. 19. Accessibility audit (axe + manual keyboard/screen-reader pass) against §11. 20. SEO pass: metadata, JSON-LD, sitemap, OG images verified per route type against §12.
 
-**Phase 8 — Performance & Launch Readiness**
-21. PPR adoption per route (homepage, PDP first), Suspense boundary audit, Lighthouse CI budgets enforced.
-22. Load/security review: rate limiting on forms/search, webhook signature verification (Shopify HMAC, Sanity webhook secret), CSP headers.
-23. Staging deploy on Vercel with production-equivalent env vars; full regression pass (unit + e2e) green.
+**Phase 8 — Performance & Launch Readiness** 21. PPR adoption per route (homepage, PDP first), Suspense boundary audit, Lighthouse CI budgets enforced. 22. Load/security review: rate limiting on forms/search, webhook signature verification (Shopify HMAC, Sanity webhook secret), CSP headers. 23. Staging deploy on Vercel with production-equivalent env vars; full regression pass (unit + e2e) green.
 
-**Phase 9 — Production**
-24. DNS cutover, production Shopify/Sanity credentials, monitoring (Vercel Analytics, error tracking) wired.
-25. Post-launch: real-user monitoring against the Phase 8 performance budget, content team onboarded to Studio, roadmap handed off for iteration (A/B testing infra, internationalization, if/when scoped).
+**Phase 9 — Production** 24. DNS cutover, production Shopify/Sanity credentials, monitoring (Vercel Analytics, error tracking) wired. 25. Post-launch: real-user monitoring against the Phase 8 performance budget, content team onboarded to Studio, roadmap handed off for iteration (A/B testing infra, internationalization, if/when scoped).
